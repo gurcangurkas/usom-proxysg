@@ -18,7 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Depoyu Klonla
         uses: actions/checkout@v4
 
       - name: Python Kurulumu
@@ -32,17 +32,18 @@ jobs:
       - name: API'den Veri Çek ve Formatla
         run: python update_list.py
 
+      - name: Sadece Txt Dosyasını Web Klasörüne Al
+        run: |
+          mkdir public
+          mv usom_local_db.txt public/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./
-          destination: ./_site
-
-      - name: Upload artifact
+      - name: Txt Klasörünü Paketle
         uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
 
   deploy:
     environment:
@@ -51,6 +52,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Deploy to GitHub Pages
+      - name: İnternette Yayınla
         id: deployment
         uses: actions/deploy-pages@v5
