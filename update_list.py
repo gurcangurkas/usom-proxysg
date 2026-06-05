@@ -20,7 +20,6 @@ def clean_url(url_str):
     return url_str
 
 def fetch_page(session, addr_type, page):
-    # Tek bir sayfayı çeken fonksiyon
     try:
         response = session.get(API_URL, params={"type": addr_type, "page": page}, timeout=20)
         response.raise_for_status()
@@ -30,19 +29,18 @@ def fetch_page(session, addr_type, page):
 
 def fetch_and_format_usom():
     session = requests.Session()
-    # USOM bağlantıyı koparırsa pes etmeyip 5 kez tekrar denemesi için mekanizma
     retries = Retry(total=5, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     session.mount('https://', HTTPAdapter(max_retries=retries, pool_connections=20, pool_maxsize=20))
     
     proxysg_lines = ["define category USOM_Zararli_Siteler"]
-    
-    # API'nin nimetinden faydalanıp sadece ProxySG'nin işine yarayacak tipleri çekiyoruz
     types_to_fetch = ['domain', 'url']
+    
+    # ProxySG'nin hata verdiği sorunlu karakterler
+    invalid_chars = ['=', '&', '(', ')', '"', "'", ' ', ';', ',', '<', '>']
     
     for addr_type in types_to_fetch:
         print(f"\n--- '{addr_type.upper()}' tipi için veri çekimi başlatılıyor ---", flush=True)
         try:
-            # Önce sayfa sayısını öğreniyoruz
             resp = session.get(API_URL, params={"type": addr_type, "page": 0}, timeout=20)
             resp.raise_for_status()
             data = resp.json()
@@ -51,7 +49,6 @@ def fetch_and_format_usom():
             
             print(f"Bulunan {addr_type.upper()} sayısı: {total_count} (Toplam {page_count} sayfa)", flush=True)
             
-            # Hızlı çekim için Multi-Threading (10 koldan aynı anda saldırıyoruz)
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = {executor.submit(fetch_page, session, addr_type, p): p for p in range(page_count)}
                 
@@ -61,18 +58,19 @@ def fetch_and_format_usom():
                     for item in models:
                         url_val = item.get('url', '')
                         cleaned = clean_url(url_val)
+                        
                         if cleaned and len(cleaned) > 1:
-                            proxysg_lines.append(f"  {cleaned}")
+                            # İÇİNDE PROXYSG'Yİ BOZAN KARAKTER YOKSA LİSTEYE EKLE
+                            if not any(char in cleaned for char in invalid_chars):
+                                proxysg_lines.append(f"  {cleaned}")
                     
                     completed += 1
-                    # GitHub ekranı donmuş gibi görünmesin diye "flush=True" ile anında ekrana basıyoruz
                     if completed % 500 == 0 or completed == page_count:
                         print(f"[{addr_type.upper()}] İşlenen sayfa: {completed}/{page_count}", flush=True)
                         
         except Exception as e:
             print(f"{addr_type.upper()} çekilirken kritik hata: {e}", flush=True)
 
-    # Mükerrerleri silip Local DB formatında kapatıyoruz
     unique_lines = [proxysg_lines[0]] + list(set(proxysg_lines[1:]))
     unique_lines.append("end")
 
