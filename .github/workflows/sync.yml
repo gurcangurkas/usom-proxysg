@@ -8,11 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - name: Depoyu Klonla
       uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Python Kurulumu
       uses: actions/setup-python@v5
@@ -30,4 +30,4 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add usom_local_db.txt
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Güncel USOM Listesi" && git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:main)
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Güncel USOM Listesi" && git push)
