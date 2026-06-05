@@ -1,8 +1,16 @@
 import requests
 import os
+import re
 
 API_URL = "https://siberguvenlik.gov.tr/api/address/index"
 OUTPUT_FILE = "usom_local_db.txt"
+
+def clean_url(url_str):
+    url_str = re.sub(r'^https?://', '', url_str, flags=re.IGNORECASE)
+    url_str = re.sub(r'^ftp://', '', url_str, flags=re.IGNORECASE)
+    url_str = url_str.split('?')[0]
+    url_str = re.sub(r':[0-9]+', '', url_str)
+    return url_str.strip()
 
 def fetch_and_format_usom():
     try:
@@ -24,7 +32,9 @@ def fetch_and_format_usom():
             addr_type = item.get('type', '')
             
             if addr_value and "IP" not in str(addr_type).upper():
-                proxysg_lines.append(addr_value)
+                cleaned = clean_url(addr_value)
+                if cleaned:
+                    proxysg_lines.append(f"  {cleaned}")
 
         unique_lines = [proxysg_lines[0]] + list(set(proxysg_lines[1:]))
         unique_lines.append("end")
@@ -32,7 +42,7 @@ def fetch_and_format_usom():
         with open(OUTPUT_FILE, "w", newline="\n", encoding="utf-8") as f:
             f.write("\n".join(unique_lines))
             
-        print(f"Başarılı! {len(unique_lines) - 2} adet zararlı adres ProxySG formatına çevrildi.")
+        print(f"Başarılı! {len(unique_lines) - 2} adet URL temizlenerek formatlandı.")
 
     except Exception as e:
         print(f"Hata oluştu, işlem iptal edildi: {e}")
