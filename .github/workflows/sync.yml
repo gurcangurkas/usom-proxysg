@@ -32,15 +32,15 @@ jobs:
       - name: API'den Veri Çek ve Formatla
         run: python update_list.py
 
-      - name: Sadece Txt Dosyasını Web Klasörüne Al
+      - name: Klasör Yapısını Ayarla
         run: |
-          mkdir public
+          mkdir -p public
           mv usom_local_db.txt public/
 
-      - name: Setup Pages
+      - name: GitHub Pages İçin Hazırla
         uses: actions/configure-pages@v5
 
-      - name: Txt Klasörünü Paketle
+      - name: Dosyaları Paketle
         uses: actions/upload-pages-artifact@v3
         with:
           path: './public'
